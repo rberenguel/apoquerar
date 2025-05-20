@@ -1,0 +1,201 @@
+/* Solarized Dark Palette */
+:root {
+  --base03: #002b36; /* Background */
+  --base02: #073642; /* Darker Background tones / Card Background */
+  --base01: #586e75; /* Comments, Grid lines */
+  --base00: #657b83; /* Default Text */
+  --base0: #839496; /* Lighter Text */
+  --base1: #93a1a1; /* Even Lighter Text */
+  --base2: #eee8d5;
+  --base3: #fdf6e3;
+  --yellow: #b58900; /* Highlight border, score text */
+  --orange: #cb4b16; /* Red Suits */
+  --red: #dc322f;
+  --magenta: #d33682;
+  --violet: #6c71c4; /* Dragging card highlight */
+  --blue: #268bd2; /* Buttons */
+  --cyan: #2aa198; /* Black Suits, Button Hover */
+  --green: #859900;
+}
+
+body {
+  font-family: "Inter", "Arial", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--base03);
+  margin: 0;
+  padding-top: 10px;
+  color: var(--base0);
+}
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--base02);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  max-width: 95vw;
+}
+canvas {
+  border: 1px solid var(--base01);
+  background-color: var(--base03);
+  cursor: default;
+  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+}
+#controls {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+}
+button {
+  padding: 10px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+  background-color: var(--blue);
+  color: var(--base3);
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+button:hover {
+  background-color: var(--cyan);
+}
+button:disabled {
+  background-color: var(--base01);
+  color: var(--base00);
+  cursor: not-allowed;
+}
+#scoreBoard {
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--base1);
+}
+#highScores {
+  display: none;
+  text-align: left;
+  width: clamp(300px, 90%, 500px);
+  padding: 15px;
+  background-color: var(--base02);
+  border: 1px solid var(--base01);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+#highScores h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--blue);
+}
+#highScores ul {
+  list-style-type: decimal;
+  padding-left: 30px;
+  margin: 0;
+}
+#highScores li {
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: var(--base0);
+}
+.message-area {
+  min-height: 20px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--green);
+  text-align: center;
+  width: 100%;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding-top: 100px;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background-color: var(--base02);
+  color: var(--base1);
+  padding: 25px;
+  border: 1px solid var(--base01);
+  width: 80%;
+  max-width: 450px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+.modal-content p {
+  margin-bottom: 20px;
+  font-size: 17px;
+}
+.modal-close-button {
+  background-color: var(--blue);
+  color: var(--base3);
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.modal-close-button:hover {
+  background-color: var(--cyan);
+}
+
+#helpButtonContainer {
+  position: absolute; /* Or relative to game-container if it's positioned */
+  top: 10px;
+  right: 10px;
+  z-index: 100; /* Ensure it's above canvas if canvas overlaps */
+}
+
+#helpButton {
+  background-color: var(--blue);
+  color: var(--base3);
+  border: none;
+  border-radius: 50%;
+  width: 36px; /* Adjust for visibility */
+  height: 36px;
+  font-size: 20px; /* Adjust for visibility */
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#helpButton:hover {
+  background-color: var(--cyan);
+}
+
+#helpModal .modal-content h3 {
+  color: var(--blue);
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+#helpContent ul {
+  list-style-position: outside;
+  padding-left: 20px; /* Indent list */
+  margin-top: 10px;
+}
+#helpContent li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+#helpContent p {
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
