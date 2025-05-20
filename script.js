@@ -3,10 +3,7 @@ const customAlertMessage = document.getElementById("customAlertMessage");
 const customAlertCloseButton = document.getElementById(
   "customAlertCloseButton",
 );
-const helpButton = document.getElementById("helpButton");
-const helpModal = document.getElementById("helpModal");
-const helpModalCloseButton = document.getElementById("helpModalCloseButton");
-const helpContentDiv = document.getElementById("helpContent");
+
 function showAlert(message) {
   customAlertMessage.textContent = message;
   customAlertModal.style.display = "flex";
@@ -14,9 +11,21 @@ function showAlert(message) {
 customAlertCloseButton.onclick = function () {
   customAlertModal.style.display = "none";
 };
+
+let originalWindowOnClick = window.onclick;
 window.onclick = function (event) {
+  if (
+    typeof originalWindowOnClick === "function" &&
+    event.target !== helpModal &&
+    event.target !== customAlertModal
+  ) {
+    originalWindowOnClick(event);
+  }
   if (event.target == customAlertModal) {
     customAlertModal.style.display = "none";
+  }
+  if (event.target == helpModal) {
+    closeHelpModal();
   }
 };
 
@@ -43,6 +52,11 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const gameMessagesArea = document.getElementById("gameMessagesArea");
 const highScoresDiv = document.getElementById("highScores");
+
+const helpButton = document.getElementById("helpButton");
+const helpModal = document.getElementById("helpModal");
+const helpModalCloseButton = document.getElementById("helpModalCloseButton");
+const helpContentDiv = document.getElementById("helpContent");
 
 const SUITS = ["H", "D", "C", "S"];
 const RANKS = ["6", "7", "8", "9", "T", "J", "Q", "K", "A"];
@@ -73,9 +87,9 @@ let GRID_PADDING = 15;
 let GRID_TOTAL_WIDTH = 0;
 let GRID_TOTAL_HEIGHT = 0;
 let GRID_OFFSET_X = 0;
-let GRID_OFFSET_Y = 0; // Will be calculated after top score area
+let GRID_OFFSET_Y = 0;
 
-let TOP_SCORE_AREA_HEIGHT = 0; // For Corners and Potential Discard scores
+let TOP_SCORE_AREA_HEIGHT = 0;
 
 let HAND_CARD_SPACING = 7;
 let HAND_AREA_WIDTH = 0;
@@ -84,6 +98,7 @@ let HAND_OFFSET_Y = 0;
 
 let DISCARD_PILE_OFFSET_Y = 0;
 let DISCARD_CARD_SPACING = 7;
+let DISCARD_SCORE_TEXT_Y_OFFSET = 0;
 
 let SCORE_TEXT_OFFSET_X = 10;
 let SCORE_TEXT_OFFSET_Y = 20;
@@ -123,6 +138,41 @@ let dragOriginalGridR = -1,
   dragOriginalGridC = -1;
 let overallScaleFactor = 1;
 
+function showHelpModal() {
+  const helpText = `
+                <p><strong>Goal:</strong> Score the most points by forming poker hands on the 4x4 grid.</p>
+                <p><strong>Rounds:</strong> 4 rounds. In each round:</p>
+                <ul>
+                    <li>You are dealt 5 cards.</li>
+                    <li>Place 4 cards onto the grid.</li>
+                    <li>The 1 remaining card is discarded.</li>
+                </ul>
+                <p><strong>Scoring:</strong></p>
+                <ul>
+                    <li>Hands are scored for each of the 4 rows, each of the 4 columns, and the 4 corners.</li>
+                    <li>Pairs (2 cards) and Three-of-a-Kind (3 cards) score as you place them.</li>
+                    <li>Straights, Flushes, Four-of-a-Kind, and Straight Flushes require 4 cards in a line.</li>
+                    <li>Corner hands also score with 2, 3, or 4 cards and get a 2x score multiplier.</li>
+                </ul>
+                <p><strong>Bonus:</strong> If all 9 scoring areas (4 rows, 4 columns, 1 corners) form a valid poker hand at the end of the game, your final 4-card discard pile is evaluated. If it also forms a hand, its score is tripled and added to your total!</p>
+                <p><strong>Moving Cards:</strong> Cards placed on the grid in the current round can be moved or returned to your hand until you click "Next" (or "Confirm & Finish Game" on the last round).</p>
+                <p><strong>Discard Pile:</strong> The potential score of your discard pile is shown at the top left as you discard cards.</p>
+            `;
+  helpContentDiv.innerHTML = helpText;
+  helpModal.style.display = "flex";
+}
+
+function closeHelpModal() {
+  helpModal.style.display = "none";
+}
+
+if (helpButton) {
+  helpButton.addEventListener("click", showHelpModal);
+}
+if (helpModalCloseButton) {
+  helpModalCloseButton.addEventListener("click", closeHelpModal);
+}
+
 function resizeCanvasAndElements() {
   const containerWidth = canvas.parentElement.clientWidth - 40;
   const maxCanvasWidth = 600;
@@ -131,11 +181,10 @@ function resizeCanvasAndElements() {
   canvas.width = Math.min(containerWidth, maxCanvasWidth);
   overallScaleFactor = canvas.width / baseCanvasWidthForLayout;
 
-  // Calculate space needed for top scores first
   const scoreBaseFontSize = 14;
   const scoreFontSize = Math.max(10, scoreBaseFontSize * overallScaleFactor);
   const scoreLineHeight = scoreFontSize * SCORE_TEXT_LINE_HEIGHT_FACTOR;
-  TOP_SCORE_AREA_HEIGHT = scoreLineHeight * 2 + 20 * overallScaleFactor; // Approx 2 lines + padding
+  TOP_SCORE_AREA_HEIGHT = scoreLineHeight * 2 * 2 + 25 * overallScaleFactor;
 
   CELL_HEIGHT = CELL_HEIGHT_BASE_DESIGN * overallScaleFactor;
   CELL_WIDTH = CELL_WIDTH_BASE_DESIGN * overallScaleFactor;
@@ -153,7 +202,7 @@ function resizeCanvasAndElements() {
     GRID_TOTAL_HEIGHT * 0.15,
   );
   GRID_OFFSET_X = (canvas.width - GRID_TOTAL_WIDTH - scoreTextAllowance) / 2;
-  GRID_OFFSET_Y = TOP_SCORE_AREA_HEIGHT + 15 * overallScaleFactor; // Grid starts below top score area
+  GRID_OFFSET_Y = TOP_SCORE_AREA_HEIGHT + 15 * overallScaleFactor;
 
   HAND_CARD_SPACING = 7 * overallScaleFactor;
   HAND_AREA_WIDTH = 5 * (CARD_WIDTH + HAND_CARD_SPACING);
@@ -167,7 +216,8 @@ function resizeCanvasAndElements() {
 
   DISCARD_PILE_OFFSET_Y = HAND_OFFSET_Y + CARD_HEIGHT + 20 * overallScaleFactor;
   DISCARD_CARD_SPACING = 7 * overallScaleFactor;
-  // DISCARD_SCORE_TEXT_Y_OFFSET is now part of TOP_SCORE_AREA_HEIGHT
+  DISCARD_SCORE_TEXT_Y_OFFSET =
+    DISCARD_PILE_OFFSET_Y + CARD_HEIGHT * 0.85 + 10 * overallScaleFactor; // This is used for top score area now
 
   canvas.height = DISCARD_PILE_OFFSET_Y + CARD_HEIGHT + 30 * overallScaleFactor;
 
@@ -233,6 +283,181 @@ function repositionHandCards() {
   });
 }
 
+// --- Touch Event Handling ---
+function getTouchPos(canvasDom, touchEvent) {
+  const rect = canvasDom.getBoundingClientRect();
+  return {
+    x: touchEvent.touches[0].clientX - rect.left,
+    y: touchEvent.touches[0].clientY - rect.top,
+  };
+}
+
+canvas.addEventListener(
+  "touchstart",
+  function (e) {
+    if (round === 0 || round > GRID_SIZE) return;
+    // Only prevent default if a card is successfully picked up
+    // This allows other touch interactions on the page if not dragging a card
+
+    const touchPos = getTouchPos(canvas, e);
+    const mouseX = touchPos.x;
+    const mouseY = touchPos.y;
+    let cardFound = false;
+
+    for (let i = currentHand.length - 1; i >= 0; i--) {
+      const card = currentHand[i];
+      if (
+        mouseX >= card.x &&
+        mouseX <= card.x + CARD_WIDTH &&
+        mouseY >= card.y &&
+        mouseY <= card.y + CARD_HEIGHT
+      ) {
+        draggingCard = card;
+        dragOriginalGridR = -1;
+        dragOriginalGridC = -1;
+        currentHand.splice(i, 1);
+        currentHand.push(draggingCard);
+        cardFound = true;
+        break;
+      }
+    }
+
+    if (!cardFound) {
+      // Renamed from draggingCard to cardFound for clarity
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          const cellCard = grid[r][c];
+          if (cellCard && cellCard.roundPlaced === round) {
+            const cardXOnGrid =
+              GRID_OFFSET_X + c * CELL_WIDTH + (CELL_WIDTH - CARD_WIDTH) / 2;
+            const cardYOnGrid =
+              GRID_OFFSET_Y + r * CELL_HEIGHT + (CELL_HEIGHT - CARD_HEIGHT) / 2;
+            if (
+              mouseX >= cardXOnGrid &&
+              mouseX <= cardXOnGrid + CARD_WIDTH &&
+              mouseY >= cardYOnGrid &&
+              mouseY <= cardYOnGrid + CARD_HEIGHT
+            ) {
+              draggingCard = cellCard;
+              dragOriginalGridR = r;
+              dragOriginalGridC = c;
+              grid[r][c] = null;
+              placedThisRoundCount--;
+              cardFound = true;
+              break;
+            }
+          }
+        }
+        if (cardFound) break;
+      }
+    }
+
+    if (draggingCard) {
+      // if cardFound is true, draggingCard is set
+      e.preventDefault(); // Prevent scrolling ONLY if we are starting a drag
+      dragOffsetX = mouseX - draggingCard.x;
+      dragOffsetY = mouseY - draggingCard.y;
+      // drawGame(); // Not needed, touchmove handles drawing
+    }
+  },
+  { passive: false },
+);
+
+canvas.addEventListener(
+  "touchmove",
+  function (e) {
+    if (!draggingCard) return;
+    e.preventDefault();
+
+    const touchPos = getTouchPos(canvas, e);
+    draggingCard.x = touchPos.x - dragOffsetX;
+    draggingCard.y = touchPos.y - dragOffsetY;
+    drawGame();
+  },
+  { passive: false },
+);
+
+canvas.addEventListener("touchend", function (e) {
+  // No e.preventDefault() needed typically on touchend for drag operations
+  if (!draggingCard) return;
+
+  const dropMouseX = draggingCard.x + CARD_WIDTH / 2;
+  const dropMouseY = draggingCard.y + CARD_HEIGHT / 2;
+
+  let placedOnGridThisDrop = false;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cellXStart = GRID_OFFSET_X + c * CELL_WIDTH;
+      const cellYStart = GRID_OFFSET_Y + r * CELL_HEIGHT;
+      const cellXEnd = cellXStart + CELL_WIDTH;
+      const cellYEnd = cellYStart + CELL_HEIGHT;
+
+      if (
+        dropMouseX >= cellXStart &&
+        dropMouseX <= cellXEnd &&
+        dropMouseY >= cellYStart &&
+        dropMouseY <= cellYEnd
+      ) {
+        if (grid[r][c] === null) {
+          if (dragOriginalGridR === -1 && placedThisRoundCount < 4) {
+            grid[r][c] = draggingCard;
+            draggingCard.isPlaced = true;
+            draggingCard.roundPlaced = round;
+            currentHand = currentHand.filter(
+              (cardInHand) => cardInHand.id !== draggingCard.id,
+            );
+            placedThisRoundCount++;
+            placedOnGridThisDrop = true;
+          } else if (dragOriginalGridR !== -1) {
+            grid[r][c] = draggingCard;
+            draggingCard.isPlaced = true;
+            draggingCard.roundPlaced = round;
+            placedThisRoundCount++;
+            placedOnGridThisDrop = true;
+          }
+        }
+        break;
+      }
+    }
+    if (placedOnGridThisDrop) break;
+  }
+
+  if (!placedOnGridThisDrop) {
+    if (dragOriginalGridR !== -1) {
+      const handAreaYStart = HAND_OFFSET_Y - 10 * overallScaleFactor;
+      const handAreaYEnd =
+        HAND_OFFSET_Y + CARD_HEIGHT + 10 * overallScaleFactor;
+      const handAreaXStart = HAND_OFFSET_X - 10 * overallScaleFactor;
+      const handAreaXEnd =
+        HAND_OFFSET_X + HAND_AREA_WIDTH + 10 * overallScaleFactor;
+
+      if (
+        dropMouseX >= handAreaXStart &&
+        dropMouseX <= handAreaXEnd &&
+        dropMouseY >= handAreaYStart &&
+        dropMouseY <= handAreaYEnd &&
+        currentHand.length < 5
+      ) {
+        currentHand.push(draggingCard);
+        draggingCard.isPlaced = false;
+        draggingCard.roundPlaced = -1;
+      } else {
+        grid[dragOriginalGridR][dragOriginalGridC] = draggingCard;
+        placedThisRoundCount++;
+      }
+    } else {
+      currentHand = currentHand.filter((card) => card.id !== draggingCard.id);
+      currentHand.push(draggingCard);
+    }
+  }
+
+  draggingCard = null;
+  repositionHandCards();
+  evaluateAllBoardScores();
+  drawGame();
+});
+
+// --- Mouse Event Handling (remains largely the same) ---
 canvas.addEventListener("mousedown", (e) => {
   if (round === 0 || round > GRID_SIZE) return;
   const rect = canvas.getBoundingClientRect();
@@ -415,48 +640,6 @@ document.getElementById("playAgainButton").addEventListener("click", () => {
   startGame();
 });
 
-if (helpButton) {
-  // Check if element exists before adding listener
-  helpButton.addEventListener("click", showHelpModal);
-}
-if (helpModalCloseButton) {
-  helpModalCloseButton.addEventListener("click", closeHelpModal);
-}
-
-const originalWindowOnClick = window.onclick; // Store original if it exists
-window.onclick = function (event) {
-  if (typeof originalWindowOnClick === "function") {
-    originalWindowOnClick(event); // Call original if it exists (e.g. for alert modal)
-  }
-  if (event.target == helpModal) {
-    closeHelpModal();
-  }
-};
-
-function showHelpModal() {
-  const helpText = `
-        <p><strong>Goal:</strong> Score the most points by forming poker hands on the grid.</p>
-        <p>In each round:</strong></p>
-        <ul>
-            <li>You get 5 cards.</li>
-            <li>Place 4 on the grid.</li>
-            <li>1 card is discarded.</li>
-        </ul>
-        <p><strong>Scoring:</strong></p>
-        <ul>
-            <li>Hands score for each row, column, and the 4 corners.</li>
-            <li>Corner hands get a 2x score multiplier.</li>
-        </ul>
-        <p><strong>Bonus:</strong> If all 9 hands (4 rows, 4 cols, 1 corners) are made, your final 4-card discard pile gets a 3x score bonus!</p>
-    `;
-  helpContentDiv.innerHTML = helpText;
-  helpModal.style.display = "flex";
-}
-
-function closeHelpModal() {
-  helpModal.style.display = "none";
-}
-
 function startGame() {
   createDeck();
   shuffleDeck();
@@ -477,7 +660,7 @@ function startGame() {
   };
 
   highScoresDiv.style.display = "none";
-  nextRoundButton.textContent = "Next";
+  nextRoundButton.textContent = "Draw next";
   document.getElementById("scoreBoard").textContent =
     `Total Score: 0 | Round: 1`;
 
@@ -559,7 +742,7 @@ function evaluateAllBoardScores() {
     grid[GRID_SIZE - 1][0],
     grid[GRID_SIZE - 1][GRID_SIZE - 1],
   ];
-  lineScores.corners = evaluateLine(cornerCards); // Evaluate corners with partial hands too
+  lineScores.corners = evaluateLine(cornerCards);
   if (lineScores.corners) {
     currentGridScore +=
       lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER;
@@ -698,22 +881,21 @@ function updateGameMessagesUI() {
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // --- Draw Top Area Scores (Corners & Potential Discard) ---
   const scoreBaseFontSize = 14;
   const scoreFontSize = Math.max(10, scoreBaseFontSize * overallScaleFactor);
   const scoreLineHeight = scoreFontSize * SCORE_TEXT_LINE_HEIGHT_FACTOR;
   ctx.font = `${scoreFontSize}px 'Arial', sans-serif`;
-  ctx.fillStyle = getComputedStyle(document.documentElement)
-    .getPropertyValue("--yellow")
-    .trim();
 
-  const topScoreYStart = 15 * overallScaleFactor; // Starting Y for this section
-  let currentTopY = topScoreYStart;
+  const topScoreYStart = 15 * overallScaleFactor;
+  let currentTopY = topScoreYStart; // Used to stack top scores if both are present
 
-  // Potential Discard Score
+  // Potential Discard Score (Top Left)
   if (round > 0 && round <= GRID_SIZE && discardedCardsPile.length >= 2) {
     const potentialDiscardHand = evaluateLine(discardedCardsPile);
     if (potentialDiscardHand) {
+      ctx.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--base1")
+        .trim();
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const discardText1 = `Discard (pot.): ${potentialDiscardHand.type}`;
@@ -724,27 +906,28 @@ function drawGame() {
         15 * overallScaleFactor,
         currentTopY + scoreLineHeight,
       );
-      currentTopY += scoreLineHeight * 2 + 5 * overallScaleFactor; // Move down for next item
+      currentTopY += scoreLineHeight * 2 + 5 * overallScaleFactor;
     }
   }
 
-  // Corner Scores
+  // Corner Scores (Top Right or below Discard if on left)
   if (lineScores.corners) {
-    ctx.textAlign = "left"; // Or 'center' if you prefer it centered in top area
+    ctx.fillStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue("--yellow")
+      .trim();
+    ctx.textAlign = "right"; // Align to right for top-right placement
     ctx.textBaseline = "top";
     const cornerText1 = `Corners: ${lineScores.corners.type}`;
-    const cornerText2 = `(${
-      lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER
-    })`;
+    const cornerText2 = `(${lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER})`;
     ctx.fillText(
       cornerText1,
-      15 * overallScaleFactor, //canvas.width / 2,
-      currentTopY,
+      canvas.width - 15 * overallScaleFactor,
+      topScoreYStart,
     );
     ctx.fillText(
       cornerText2,
-      15 * overallScaleFactor, //canvas.width / 2,
-      currentTopY + scoreLineHeight,
+      canvas.width - 15 * overallScaleFactor,
+      topScoreYStart + scoreLineHeight,
     );
   }
 
@@ -775,7 +958,7 @@ function drawGame() {
   ctx.fillStyle = getComputedStyle(document.documentElement)
     .getPropertyValue("--yellow")
     .trim();
-  ctx.font = `${scoreFontSize}px 'Arial', sans-serif`; // Ensure font is set again
+  ctx.font = `${scoreFontSize}px 'Arial', sans-serif`;
 
   for (let r = 0; r < GRID_SIZE; r++) {
     if (lineScores.rows[r]) {
@@ -873,7 +1056,6 @@ function drawGame() {
       msgY += 28 * overallScaleFactor;
     });
   }
-  // Removed direct call to drawWelcomeScreen, game starts immediately
 }
 
 const HIGH_SCORES_KEY = "apoquerar001";
@@ -893,6 +1075,7 @@ async function saveHighScore(score) {
 }
 async function loadHighScores() {
   const highScoresList = document.getElementById("highScoresList");
+  if (!highScoresList) return;
   highScoresList.innerHTML = "";
   const highScores = (await localStore.get(HIGH_SCORES_KEY)) || [];
   if (highScores.length === 0) {
@@ -910,6 +1093,5 @@ async function loadHighScores() {
 
 // Initial Setup
 loadHighScores();
-highScoresDiv.style.display = "none";
-startGame(); // Start the game directly
-// resizeCanvasAndElements() is called within startGame after first deal
+if (highScoresDiv) highScoresDiv.style.display = "none";
+startGame();
