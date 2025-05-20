@@ -140,6 +140,8 @@ let overallScaleFactor = 1;
 
 function showHelpModal() {
   const helpText = `
+                <h4>A barebones version of <a href="https://www.puzzmo.com/game/pile-up-poker/">Pile up Poker</a> by Zach Gage, playable for real in <a href="https://www.puzzmo.com/">Puzzmo</a></h4>
+                <hr/>
                 <p><strong>Goal:</strong> Score the most points by forming poker hands on the 4x4 grid.</p>
                 <p><strong>Rounds:</strong> 4 rounds. In each round:</p>
                 <ul>
@@ -155,7 +157,6 @@ function showHelpModal() {
                     <li>Corner hands also score with 2, 3, or 4 cards and get a 2x score multiplier.</li>
                 </ul>
                 <p><strong>Bonus:</strong> If all 9 scoring areas (4 rows, 4 columns, 1 corners) form a valid poker hand at the end of the game, your final 4-card discard pile is evaluated. If it also forms a hand, its score is tripled and added to your total!</p>
-                <p><strong>Moving Cards:</strong> Cards placed on the grid in the current round can be moved or returned to your hand until you click "Next" (or "Confirm & Finish Game" on the last round).</p>
                 <p><strong>Discard Pile:</strong> The potential score of your discard pile is shown at the top left as you discard cards.</p>
             `;
   helpContentDiv.innerHTML = helpText;

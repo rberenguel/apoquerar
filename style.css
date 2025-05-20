@@ -196,6 +196,10 @@ button:disabled {
   font-size: 1.5em;
 }
 
+#helpModal a {
+  color: var(--yellow);
+}
+
 #helpContent {
   text-align: left;
   max-height: 60vh;
