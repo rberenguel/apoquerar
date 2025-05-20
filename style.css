@@ -165,7 +165,7 @@ button:disabled {
 #helpButtonContainer {
   position: absolute;
   top: 15px;
-  right: 15px;
+  right: calc(50% - 2rem);
   z-index: 100;
 }
 
