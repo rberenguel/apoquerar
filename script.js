@@ -105,13 +105,13 @@ let SCORE_TEXT_OFFSET_Y = 20;
 let SCORE_TEXT_LINE_HEIGHT_FACTOR = 1.2;
 
 const HAND_SCORES = {
-  PAIR: 10,
-  TWO_PAIR: 20,
-  THREE_OF_A_KIND: 50,
-  STRAIGHT: 150,
-  FLUSH: 50,
-  FOUR_OF_A_KIND: 100,
-  STRAIGHT_FLUSH: 200,
+  PAIR: 5,
+  TWO_PAIR: 60,
+  THREE_OF_A_KIND: 125,
+  STRAIGHT: 180,
+  FLUSH: 80,
+  FOUR_OF_A_KIND: 325,
+  STRAIGHT_FLUSH: 450,
   CORNERS_MULTIPLIER: 2,
   DISCARD_BONUS_MULTIPLIER: 3,
 };
@@ -355,6 +355,18 @@ canvas.addEventListener(
 
     if (draggingCard) {
       // if cardFound is true, draggingCard is set
+      // If picked from grid, ensure its x,y are its visual grid coordinates before offset calculation
+      if (dragOriginalGridR !== -1 && dragOriginalGridC !== -1) {
+        // Indicates it was picked from grid
+        draggingCard.x =
+          GRID_OFFSET_X +
+          dragOriginalGridC * CELL_WIDTH +
+          (CELL_WIDTH - CARD_WIDTH) / 2;
+        draggingCard.y =
+          GRID_OFFSET_Y +
+          dragOriginalGridR * CELL_HEIGHT +
+          (CELL_HEIGHT - CARD_HEIGHT) / 2;
+      }
       e.preventDefault(); // Prevent scrolling ONLY if we are starting a drag
       dragOffsetX = mouseX - draggingCard.x;
       dragOffsetY = mouseY - draggingCard.y;
@@ -511,6 +523,18 @@ canvas.addEventListener("mousedown", (e) => {
   }
 
   if (draggingCard) {
+    // If picked from grid, ensure its x,y are its visual grid coordinates before offset calculation
+    if (dragOriginalGridR !== -1 && dragOriginalGridC !== -1) {
+      // Indicates it was picked from grid
+      draggingCard.x =
+        GRID_OFFSET_X +
+        dragOriginalGridC * CELL_WIDTH +
+        (CELL_WIDTH - CARD_WIDTH) / 2;
+      draggingCard.y =
+        GRID_OFFSET_Y +
+        dragOriginalGridR * CELL_HEIGHT +
+        (CELL_HEIGHT - CARD_HEIGHT) / 2;
+    }
     dragOffsetX = mouseX - draggingCard.x;
     dragOffsetY = mouseY - draggingCard.y;
     drawGame();
@@ -641,6 +665,15 @@ document.getElementById("playAgainButton").addEventListener("click", () => {
   startGame();
 });
 
+function getScoreMultiplier(numberOfHands) {
+  if (numberOfHands >= 10) return 6;
+  if (numberOfHands >= 8) return 5;
+  if (numberOfHands >= 6) return 4;
+  if (numberOfHands >= 4) return 3;
+  if (numberOfHands >= 2) return 2;
+  return 1;
+}
+
 function startGame() {
   createDeck();
   shuffleDeck();
@@ -649,8 +682,7 @@ function startGame() {
     .map(() => Array(GRID_SIZE).fill(null));
   discardedCardsPile = [];
   currentHand = [];
-  gameMessages = [];
-  updateGameMessagesUI();
+  gameMessages = []; // Clear previous game messages
   round = 1;
   totalScore = 0;
   placedThisRoundCount = 0;
@@ -661,14 +693,19 @@ function startGame() {
   };
 
   highScoresDiv.style.display = "none";
+  document.getElementById("playAgainButton").style.display = "none";
+  nextRoundButton.style.display = "inline-block";
+  nextRoundButton.disabled = false;
   nextRoundButton.textContent = "Draw next";
-  document.getElementById("scoreBoard").textContent =
-    `Total Score: 0 | Round: 1`;
 
-  dealCards();
+  // Set initial scoreboard text; evaluateAllBoardScores will refine it shortly
+  document.getElementById("scoreBoard").textContent =
+    `Total Score: 0 | Multiplier: x1 | Round: 1`;
+
+  dealCards(); // This also calls repositionHandCards
   loadHighScores();
-  evaluateAllBoardScores();
-  resizeCanvasAndElements();
+  evaluateAllBoardScores(); // This will calculate initial score (0) and set multiplier (x1)
+  resizeCanvasAndElements(); // This calls drawGame
 }
 
 function evaluateLine(lineCards) {
@@ -703,7 +740,7 @@ function evaluateLine(lineCards) {
     else if (counts[0] === 3)
       result = { type: "3 of Kind", score: HAND_SCORES.THREE_OF_A_KIND };
     else if (counts[0] === 2 && counts.length > 1 && counts[1] === 2)
-      result = { type: "Two Pair", score: HAND_SCORES.TWO_PAIR };
+      result = { type: "2 Pair", score: HAND_SCORES.TWO_PAIR };
     else if (counts[0] === 2)
       result = { type: "Pair", score: HAND_SCORES.PAIR };
   } else if (actualCards.length === 3) {
@@ -718,13 +755,20 @@ function evaluateLine(lineCards) {
 }
 
 function evaluateAllBoardScores() {
-  let currentGridScore = 0;
+  let rawGridScore = 0;
   let madeHandsCount = 0;
+
+  lineScores = {
+    // Resetting lineScores for fresh evaluation
+    rows: Array(GRID_SIZE).fill(null),
+    cols: Array(GRID_SIZE).fill(null),
+    corners: null,
+  };
 
   for (let r = 0; r < GRID_SIZE; r++) {
     lineScores.rows[r] = evaluateLine(grid[r]);
     if (lineScores.rows[r]) {
-      currentGridScore += lineScores.rows[r].score;
+      rawGridScore += lineScores.rows[r].score;
       madeHandsCount++;
     }
   }
@@ -732,7 +776,7 @@ function evaluateAllBoardScores() {
     const colCards = grid.map((row) => row[c]);
     lineScores.cols[c] = evaluateLine(colCards);
     if (lineScores.cols[c]) {
-      currentGridScore += lineScores.cols[c].score;
+      rawGridScore += lineScores.cols[c].score;
       madeHandsCount++;
     }
   }
@@ -745,20 +789,24 @@ function evaluateAllBoardScores() {
   ];
   lineScores.corners = evaluateLine(cornerCards);
   if (lineScores.corners) {
-    currentGridScore +=
-      lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER;
+    rawGridScore += lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER;
     madeHandsCount++;
   }
 
-  totalScore = currentGridScore;
-  document.getElementById("scoreBoard").textContent =
-    `Total Score: ${totalScore}` +
-    (round <= GRID_SIZE && round > 0
-      ? ` | Round: ${round}`
-      : round === 0
-        ? ""
-        : ` | Game Over!`);
-  return madeHandsCount;
+  const currentMultiplier = getScoreMultiplier(madeHandsCount);
+  totalScore = rawGridScore * currentMultiplier;
+
+  const scoreBoard = document.getElementById("scoreBoard");
+  let scoreBoardText = `Total Score: ${totalScore} | Multiplier: x${currentMultiplier}`;
+  if (round <= GRID_SIZE && round > 0) {
+    scoreBoardText += ` | Round: ${round}`;
+  } else if (round === 0) {
+    scoreBoardText = `Total Score: 0 | Multiplier: x1 | Round: 0`;
+  }
+  // The "Game Over!" part of the scoreboard text is definitively set by endGame
+  if (scoreBoard) scoreBoard.textContent = scoreBoardText;
+
+  return { rawGridScore, madeHandsCount, currentMultiplier };
 }
 
 function endGame() {
@@ -768,33 +816,53 @@ function endGame() {
   document.getElementById("playAgainButton").style.display = "inline-block";
   highScoresDiv.style.display = "block";
 
-  const madeHandsCount = evaluateAllBoardScores();
+  const boardEvalData = evaluateAllBoardScores(); // This updates score based on board hands
+  let finalRawScore = boardEvalData.rawGridScore;
+  let finalMadeHandsCount = boardEvalData.madeHandsCount;
+
+  // Store messages for game over screen separately to avoid duplication if endGame is called multiple times
+  let endOfGameSpecificMessages = [];
 
   if (
-    madeHandsCount === GRID_SIZE * 2 + 1 &&
+    finalMadeHandsCount === GRID_SIZE * 2 + 1 && // All 9 board hands made
     discardedCardsPile.length === GRID_SIZE
   ) {
     const discardHandResult = evaluateLine(discardedCardsPile);
     if (discardHandResult) {
       const bonusAmount =
         discardHandResult.score * HAND_SCORES.DISCARD_BONUS_MULTIPLIER;
-      totalScore += bonusAmount;
-      gameMessages.push(
-        `All Hands Bonus! Discarded (${discardHandResult.type}): +${bonusAmount}`,
+      finalRawScore += bonusAmount; // Add raw bonus to raw score total
+      finalMadeHandsCount++; // Increment hand count, potentially to 10
+      endOfGameSpecificMessages.push(
+        `All Hands Bonus! Discarded (${discardHandResult.type}): +${bonusAmount} (raw).`,
       );
     } else {
-      gameMessages.push(`All Hands Made! No score from discards.`);
+      endOfGameSpecificMessages.push(
+        `All 9 Board Hands Made! No score from discards.`,
+      );
     }
   } else if (discardedCardsPile.length === GRID_SIZE) {
-    gameMessages.push(`Game complete. Discards not eligible for bonus.`);
+    endOfGameSpecificMessages.push(
+      `Game complete. Discards not eligible for bonus.`,
+    );
   }
 
+  const finalMultiplier = getScoreMultiplier(finalMadeHandsCount);
+  totalScore = finalRawScore * finalMultiplier; // Calculate final total score with the new multiplier
+
+  if (endOfGameSpecificMessages.length > 0) {
+    gameMessages.push(...endOfGameSpecificMessages); // Add these to the main game messages
+  }
+  gameMessages.push(
+    `Base score ${finalRawScore} with x${finalMultiplier} multiplier = ${totalScore} pts`,
+  );
+
   document.getElementById("scoreBoard").textContent =
-    `Total Score: ${totalScore} | Game Over!`;
+    `Total Score: ${totalScore} | Multiplier: x${finalMultiplier} | Game Over!`;
   updateGameMessagesUI();
   saveHighScore(totalScore);
   loadHighScores();
-  drawGame();
+  drawGame(); // drawGame will display game over screen and messages
 }
 
 function drawCard(card, x, y, isDiscardedVisual = false) {
@@ -919,7 +987,9 @@ function drawGame() {
     ctx.textAlign = "right"; // Align to right for top-right placement
     ctx.textBaseline = "top";
     const cornerText1 = `Corners: ${lineScores.corners.type}`;
-    const cornerText2 = `(${lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER})`;
+    const cornerText2 = `(${
+      lineScores.corners.score * HAND_SCORES.CORNERS_MULTIPLIER
+    })`;
     ctx.fillText(
       cornerText1,
       canvas.width - 15 * overallScaleFactor,
