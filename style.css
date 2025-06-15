@@ -1,7 +1,7 @@
 /* Solarized Dark Palette */
 :root {
-  --base03: #002b36; /* Background */
-  --base02: #073642; /* Darker Background tones / Card Background */
+  --base03: #111; /* Background */
+  --base02: #030303; /* Darker Background tones / Card Background */
   --base01: #586e75; /* Comments, Grid lines */
   --base00: #657b83; /* Default Text */
   --base0: #839496; /* Lighter Text */
@@ -12,8 +12,8 @@
   --orange: #cb4b16; /* Red Suits */
   --red: #dc322f;
   --magenta: #d33682;
-  --violet: #6c71c4; /* Dragging card highlight */
-  --blue: #268bd2; /* Buttons */
+  --violet: #444; /* Dragging card highlight */
+  --blue: #338; /* Buttons */
   --cyan: #2aa198; /* Black Suits, Button Hover */
   --green: #859900;
 }

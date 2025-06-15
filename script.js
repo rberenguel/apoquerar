@@ -700,7 +700,7 @@ function startGame() {
 
   // Set initial scoreboard text; evaluateAllBoardScores will refine it shortly
   document.getElementById("scoreBoard").textContent =
-    `Total Score: 0 | Multiplier: x1 | Round: 1`;
+    `Total Score: 0 | Multiplier: x1`;
 
   dealCards(); // This also calls repositionHandCards
   loadHighScores();
@@ -798,11 +798,6 @@ function evaluateAllBoardScores() {
 
   const scoreBoard = document.getElementById("scoreBoard");
   let scoreBoardText = `Total Score: ${totalScore} | Multiplier: x${currentMultiplier}`;
-  if (round <= GRID_SIZE && round > 0) {
-    scoreBoardText += ` | Round: ${round}`;
-  } else if (round === 0) {
-    scoreBoardText = `Total Score: 0 | Multiplier: x1 | Round: 0`;
-  }
   // The "Game Over!" part of the scoreboard text is definitively set by endGame
   if (scoreBoard) scoreBoard.textContent = scoreBoardText;
 
@@ -903,15 +898,26 @@ function drawCard(card, x, y, isDiscardedVisual = false) {
   ctx.fill();
   ctx.stroke();
 
-  const suitColor =
-    card.suit === "H" || card.suit === "D"
+  let suitColor;
+  /* card.suit === "H" || card.suit === "D"
       ? getComputedStyle(document.documentElement)
           .getPropertyValue("--orange")
           .trim()
       : getComputedStyle(document.documentElement)
           .getPropertyValue("--cyan")
-          .trim();
-
+          .trim();*/
+  if (card.suit === "H") {
+    suitColor = "#933";
+  }
+  if (card.suit === "D") {
+    suitColor = "#993";
+  }
+  if (card.suit === "S") {
+    suitColor = "#339";
+  }
+  if (card.suit === "C") {
+    suitColor = "#393";
+  }
   const displayRank = card.rank === "T" ? "10" : card.rank;
   const cardInternalPadding = 10 * overallScaleFactor;
 

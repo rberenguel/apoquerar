@@ -6,4 +6,4 @@ This is a 100% Gemini created [1] version of Zach Gage's [_Pile up Poker_](https
 
 The one in Puzzmo is _way_ better than this (the only comparison is the goal of the game), but this scratches the offline playing itch well enough.
 
-[1]: I have tweaked some of the text, only.
+[1]: I have tweaked some of the text and styles, only.
