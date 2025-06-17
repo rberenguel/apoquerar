@@ -245,8 +245,12 @@ function createDeck() {
         y: 0,
         homeX: 0,
         homeY: 0,
+        vx: 0,
+        vy: 0,
         isPlaced: false,
         roundPlaced: -1,
+        isFlipped: false,
+        flipScaleX: 1,
       });
     }),
   );
@@ -257,6 +261,76 @@ function shuffleDeck() {
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
 }
+
+function animateCardFlip(card) {
+  let isShrinking = true;
+  const animationTime = 150; // ms for one direction
+  const intervalTime = 10;
+  const step = 1 / (animationTime / intervalTime);
+
+  const animInterval = setInterval(() => {
+    if (isShrinking) {
+      card.flipScaleX -= step;
+      if (card.flipScaleX <= 0) {
+        card.flipScaleX = 0;
+        isShrinking = false;
+        card.isFlipped = true;
+      }
+    } else {
+      // Growing
+      card.flipScaleX += step;
+      if (card.flipScaleX >= 1) {
+        card.flipScaleX = 1;
+        clearInterval(animInterval);
+      }
+    }
+    drawGame();
+  }, intervalTime);
+}
+
+function animateCardMovement(card) {
+  const stiffness = 0.08;
+  const damping = 0.85;
+  const intervalTime = 10;
+
+  const moveInterval = setInterval(() => {
+    const distX = card.homeX - card.x;
+    const distY = card.homeY - card.y;
+
+    const accelX = distX * stiffness;
+    const accelY = distY * stiffness;
+    card.vx += accelX;
+    card.vy += accelY;
+    card.vx *= damping;
+    card.vy *= damping;
+    card.x += card.vx;
+    card.y += card.vy;
+
+    const isSettled =
+      Math.abs(distX) < 0.5 &&
+      Math.abs(distY) < 0.5 &&
+      Math.abs(card.vx) < 0.5 &&
+      Math.abs(card.vy) < 0.5;
+
+    if (isSettled) {
+      clearInterval(moveInterval);
+      card.x = card.homeX;
+      card.y = card.homeY;
+      animateCardFlip(card); // Flip card *after* it lands
+    }
+
+    drawGame();
+  }, intervalTime);
+}
+
+function animateDeal() {
+  currentHand.forEach((card, index) => {
+    setTimeout(() => {
+      animateCardMovement(card);
+    }, index * 120); // Stagger the dealing of each card
+  });
+}
+
 function dealCards() {
   currentHand = [];
   placedThisRoundCount = 0;
@@ -265,22 +339,27 @@ function dealCards() {
       const card = deck.pop();
       card.isPlaced = false;
       card.roundPlaced = -1;
+      card.isFlipped = false;
+      card.flipScaleX = 1;
+      card.vx = 0;
+      card.vy = 0;
+      card.x = canvas.width / 2 - CARD_WIDTH / 2;
+      card.y = -CARD_HEIGHT * 2;
       currentHand.push(card);
     } else {
       console.error("Deck empty, cannot deal more cards.");
       break;
     }
   }
-  repositionHandCards();
+  repositionHandCards(); // Sets the destination homeX/homeY for cards
+  animateDeal(); // Starts the new animation sequence
 }
+
 function repositionHandCards() {
   currentHand.forEach((card, i) => {
     card.homeX = HAND_OFFSET_X + i * (CARD_WIDTH + HAND_CARD_SPACING);
     card.homeY = HAND_OFFSET_Y;
-    if (!draggingCard || draggingCard.id !== card.id) {
-      card.x = card.homeX;
-      card.y = card.homeY;
-    }
+    // Don't snap position here, animation will handle it
   });
 }
 
@@ -308,6 +387,7 @@ canvas.addEventListener(
     for (let i = currentHand.length - 1; i >= 0; i--) {
       const card = currentHand[i];
       if (
+        card.isFlipped &&
         mouseX >= card.x &&
         mouseX <= card.x + CARD_WIDTH &&
         mouseY >= card.y &&
@@ -480,6 +560,7 @@ canvas.addEventListener("mousedown", (e) => {
   for (let i = currentHand.length - 1; i >= 0; i--) {
     const card = currentHand[i];
     if (
+      card.isFlipped &&
       mouseX >= card.x &&
       mouseX <= card.x + CARD_WIDTH &&
       mouseY >= card.y &&
@@ -860,12 +941,63 @@ function endGame() {
   drawGame(); // drawGame will display game over screen and messages
 }
 
+function drawCardBack(card, x, y, width, height) {
+  const cornerRadius = 6 * overallScaleFactor;
+  ctx.fillStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue("--base02")
+    .trim();
+  ctx.strokeStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue("--base01")
+    .trim();
+  ctx.lineWidth = 1.5 * overallScaleFactor;
+
+  // Clip to rounded rectangle shape
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, [cornerRadius]);
+  ctx.fill();
+  ctx.stroke();
+  ctx.clip();
+
+  // Draw diagonal stripes
+  ctx.strokeStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue("--red")
+    .trim();
+  ctx.lineWidth = 5 * overallScaleFactor; // Thinner stripes
+  const stripeCount = 10;
+  for (let i = -stripeCount; i < stripeCount * 1.5; i++) {
+    // Loop more to cover card
+    ctx.beginPath();
+    const xStart = x + i * 15 * overallScaleFactor - 10 * overallScaleFactor;
+    const yStart = y - 10 * overallScaleFactor;
+    const xEnd =
+      x + i * 15 * overallScaleFactor - 10 * overallScaleFactor + width * 2;
+    const yEnd = y + height + 10 * overallScaleFactor;
+
+    ctx.moveTo(xStart, yStart);
+    ctx.lineTo(xEnd, yEnd);
+    ctx.stroke();
+  }
+
+  ctx.restore(); // Remove clipping mask
+}
+
 function drawCard(card, x, y, isDiscardedVisual = false) {
   if (!card) return;
 
-  const displayWidth = isDiscardedVisual ? CARD_WIDTH * 0.85 : CARD_WIDTH;
-  const displayHeight = isDiscardedVisual ? CARD_HEIGHT * 0.85 : CARD_HEIGHT;
+  const baseHeight = isDiscardedVisual ? CARD_HEIGHT * 0.85 : CARD_HEIGHT;
+  const baseWidth = isDiscardedVisual ? CARD_WIDTH * 0.85 : CARD_WIDTH;
 
+  const scale = card.flipScaleX !== undefined ? card.flipScaleX : 1;
+  const displayWidth = baseWidth * scale;
+  const centeredX = x + (baseWidth - displayWidth) / 2;
+
+  if (!card.isFlipped) {
+    drawCardBack(card, centeredX, y, displayWidth, baseHeight);
+    return; // Stop here if card is face down
+  }
+
+  // --- Draw Card Face ---
   if (draggingCard && draggingCard.id === card.id) {
     ctx.fillStyle = getComputedStyle(document.documentElement)
       .getPropertyValue("--violet")
@@ -894,30 +1026,26 @@ function drawCard(card, x, y, isDiscardedVisual = false) {
   }
 
   ctx.beginPath();
-  ctx.roundRect(x, y, displayWidth, displayHeight, [6 * overallScaleFactor]);
+  ctx.roundRect(centeredX, y, displayWidth, baseHeight, [
+    6 * overallScaleFactor,
+  ]);
   ctx.fill();
   ctx.stroke();
 
+  // Don't draw text/symbols if card is mostly flipped
+  if (scale < 0.4) return;
+
   let suitColor;
-  /* card.suit === "H" || card.suit === "D"
-      ? getComputedStyle(document.documentElement)
-          .getPropertyValue("--orange")
-          .trim()
-      : getComputedStyle(document.documentElement)
-          .getPropertyValue("--cyan")
-          .trim();*/
   if (card.suit === "H") {
     suitColor = "#933";
-  }
-  if (card.suit === "D") {
+  } else if (card.suit === "D") {
     suitColor = "#993";
-  }
-  if (card.suit === "S") {
+  } else if (card.suit === "S") {
     suitColor = "#339";
-  }
-  if (card.suit === "C") {
+  } else if (card.suit === "C") {
     suitColor = "#393";
   }
+
   const displayRank = card.rank === "T" ? "10" : card.rank;
   const cardInternalPadding = 10 * overallScaleFactor;
 
@@ -929,7 +1057,7 @@ function drawCard(card, x, y, isDiscardedVisual = false) {
   ctx.textBaseline = "top";
   ctx.fillText(
     getSuitSymbol(card.suit),
-    x + displayWidth / 2,
+    centeredX + displayWidth / 2,
     y + cardInternalPadding,
   );
 
@@ -940,8 +1068,8 @@ function drawCard(card, x, y, isDiscardedVisual = false) {
   ctx.textBaseline = "bottom";
   ctx.fillText(
     displayRank,
-    x + displayWidth / 2,
-    y + displayHeight - cardInternalPadding,
+    centeredX + displayWidth / 2,
+    y + baseHeight - cardInternalPadding,
   );
 }
 
@@ -1077,6 +1205,7 @@ function drawGame() {
 
   // --- Draw Hand and Discard Pile Visuals ---
   currentHand.forEach((card) => {
+    // This now draws cards that are in motion from the top
     if (!draggingCard || draggingCard.id !== card.id)
       drawCard(card, card.x, card.y);
   });
