@@ -3,8 +3,14 @@ export { haptic };
 // Crude JS conversion of https://github.com/tijnjh/ios-haptics
 // Thanks for that!
 
+let started = false;
+
 const haptic = () => {
   try {
+    if (started) {
+      return;
+    }
+    started = true;
     const label = document.createElement("label");
     label.ariaHidden = "true";
     label.style.display = "none";
@@ -14,11 +20,11 @@ const haptic = () => {
     input.setAttribute("switch", "");
     label.appendChild(input);
 
-    document.body.appendChild(label);
+    document.head.appendChild(label);
     label.click();
-    document.body.removeChild(label);
+    document.head.removeChild(label);
+    started = false;
   } catch {
-    console.warn("Could not trigger haptics");
     // Fail silently
   }
 };

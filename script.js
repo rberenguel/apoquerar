@@ -1,7 +1,5 @@
 import { haptic } from "./haptic.js";
 
-window.haptic = haptic;
-
 const customAlertModal = document.getElementById("customAlertModal");
 const customAlertMessage = document.getElementById("customAlertMessage");
 const customAlertCloseButton = document.getElementById(
@@ -143,6 +141,7 @@ let dragOriginalGridR = -1,
 let overallScaleFactor = 1;
 
 function showHelpModal() {
+  haptic();
   const helpText = `
                 <h4>A barebones version of <a href="https://www.puzzmo.com/game/pile-up-poker/">Pile up Poker</a> by Zach Gage, playable for real in <a href="https://www.puzzmo.com/">Puzzmo</a></h4>
                 <hr/>
@@ -501,14 +500,12 @@ canvas.addEventListener("touchend", function (e) {
             );
             placedThisRoundCount++;
             placedOnGridThisDrop = true;
-            haptic.confirm();
           } else if (dragOriginalGridR !== -1) {
             grid[r][c] = draggingCard;
             draggingCard.isPlaced = true;
             draggingCard.roundPlaced = round;
             placedThisRoundCount++;
             placedOnGridThisDrop = true;
-            haptic.confirm();
           }
         }
         break;
@@ -710,6 +707,7 @@ canvas.addEventListener("mouseup", (e) => {
 
 const nextRoundButton = document.getElementById("nextRoundButton");
 nextRoundButton.addEventListener("click", () => {
+  haptic();
   gameMessages = [];
   if (round === 0) {
     startGame();
@@ -741,6 +739,7 @@ nextRoundButton.addEventListener("click", () => {
 });
 
 document.getElementById("playAgainButton").addEventListener("click", () => {
+  haptic.confirm();
   highScoresDiv.style.display = "none";
   document.getElementById("playAgainButton").style.display = "none";
   nextRoundButton.style.display = "inline-block";
@@ -1224,7 +1223,7 @@ function drawGame() {
     GRID_TOTAL_WIDTH +
     SCORE_TEXT_OFFSET_X * 2 +
     80 * overallScaleFactor;
-  const discardCardYStep = CARD_HEIGHT * 0.85 * 0.35;
+  const discardCardYStep = CARD_HEIGHT * 0.85 * 1.1;
   discardedCardsPile.forEach((card, index) => {
     const discardCardY = GRID_OFFSET_Y + index * discardCardYStep;
     drawCard(card, discardPileStartX, discardCardY, true);
