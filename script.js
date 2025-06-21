@@ -1,3 +1,7 @@
+import { haptic } from "./haptic.js";
+
+window.haptic = haptic;
+
 const customAlertModal = document.getElementById("customAlertModal");
 const customAlertMessage = document.getElementById("customAlertMessage");
 const customAlertCloseButton = document.getElementById(
@@ -203,24 +207,20 @@ function resizeCanvasAndElements() {
     GRID_TOTAL_HEIGHT * 0.15,
   );
   GRID_OFFSET_X = (canvas.width - GRID_TOTAL_WIDTH - scoreTextAllowance) / 2;
-  GRID_OFFSET_Y = TOP_SCORE_AREA_HEIGHT + 15 * overallScaleFactor;
+  GRID_OFFSET_Y = TOP_SCORE_AREA_HEIGHT;
 
   HAND_CARD_SPACING = 7 * overallScaleFactor;
   HAND_AREA_WIDTH = 5 * (CARD_WIDTH + HAND_CARD_SPACING);
   HAND_OFFSET_X = (canvas.width - HAND_AREA_WIDTH) / 2;
   HAND_OFFSET_Y =
-    GRID_OFFSET_Y +
-    GRID_TOTAL_HEIGHT +
-    GRID_PADDING +
-    SCORE_TEXT_OFFSET_Y * 2.5 +
-    30 * overallScaleFactor;
+    GRID_OFFSET_Y + GRID_TOTAL_HEIGHT + GRID_PADDING + SCORE_TEXT_OFFSET_Y * 2;
 
   DISCARD_PILE_OFFSET_Y = HAND_OFFSET_Y + CARD_HEIGHT + 20 * overallScaleFactor;
   DISCARD_CARD_SPACING = 7 * overallScaleFactor;
   DISCARD_SCORE_TEXT_Y_OFFSET =
     DISCARD_PILE_OFFSET_Y + CARD_HEIGHT * 0.85 + 10 * overallScaleFactor; // This is used for top score area now
 
-  canvas.height = DISCARD_PILE_OFFSET_Y + CARD_HEIGHT + 30 * overallScaleFactor;
+  canvas.height = HAND_OFFSET_Y + CARD_HEIGHT + 30 * overallScaleFactor;
 
   SCORE_TEXT_OFFSET_X = 10 * overallScaleFactor;
   SCORE_TEXT_OFFSET_Y = 20 * overallScaleFactor;
@@ -501,12 +501,14 @@ canvas.addEventListener("touchend", function (e) {
             );
             placedThisRoundCount++;
             placedOnGridThisDrop = true;
+            haptic.confirm();
           } else if (dragOriginalGridR !== -1) {
             grid[r][c] = draggingCard;
             draggingCard.isPlaced = true;
             draggingCard.roundPlaced = round;
             placedThisRoundCount++;
             placedOnGridThisDrop = true;
+            haptic.confirm();
           }
         }
         break;
@@ -1146,7 +1148,11 @@ function drawGame() {
 
       const cellX = GRID_OFFSET_X + c * CELL_WIDTH;
       const cellY = GRID_OFFSET_Y + r * CELL_HEIGHT;
-      ctx.strokeRect(cellX, cellY, CELL_WIDTH, CELL_HEIGHT);
+      ctx.beginPath();
+      ctx.roundRect(cellX, cellY, CELL_WIDTH, CELL_HEIGHT, [
+        8 * overallScaleFactor,
+      ]);
+      ctx.stroke();
 
       const card = grid[r][c];
       if (card) {
@@ -1213,14 +1219,16 @@ function drawGame() {
 
   updateGameMessagesUI();
 
-  const discardPileStartX = HAND_OFFSET_X;
+  const discardPileStartX =
+    GRID_OFFSET_X +
+    GRID_TOTAL_WIDTH +
+    SCORE_TEXT_OFFSET_X * 2 +
+    80 * overallScaleFactor;
+  const discardCardYStep = CARD_HEIGHT * 0.85 * 0.35;
   discardedCardsPile.forEach((card, index) => {
-    const discardCardX = discardPileStartX + index * (CARD_WIDTH * 0.85 * 0.6);
-    if (discardCardX + CARD_WIDTH * 0.85 < canvas.width) {
-      drawCard(card, discardCardX, DISCARD_PILE_OFFSET_Y, true);
-    }
+    const discardCardY = GRID_OFFSET_Y + index * discardCardYStep;
+    drawCard(card, discardPileStartX, discardCardY, true);
   });
-
   // --- Game Over Screen ---
   if (round > GRID_SIZE) {
     ctx.fillStyle = "rgba(0, 43, 54, 0.85)";
