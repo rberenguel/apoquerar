@@ -6,47 +6,225 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="icon" type="image/png" href="icon.png" />
+    <meta name="description" content="Apoquerar: Modern Poker Puzzle Game" />
+    <meta name="theme-color" content="#000000" />
     <title>Apoquerar</title>
-    <link href="style.css" rel="stylesheet" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/png" href="icon.png" />
   </head>
   <body>
-    <div class="game-container">
-      <div id="helpButtonContainer">
-        <button id="helpButton">?</button>
+    <header>
+      <div class="header-top">
+        <div class="header-info">
+          <div class="stats">
+            <span id="score-label">Score:</span>
+            <span id="lbl-total-score" class="accent-text">0</span>
+            <span
+              id="multiplier-label"
+              style="font-size: 0.8em; opacity: 0.6; margin-left: 10px"
+              >x<span id="lbl-multiplier">1</span></span
+            >
+          </div>
+          <div class="meta-info">Round <span id="lbl-round">1</span> / 4</div>
+          <button id="btn-help" class="help-circle-btn">?</button>
+        </div>
       </div>
-      <canvas id="gameCanvas"></canvas>
+    </header>
+
+    <main id="game-container">
+      <div id="board-assembly">
+        <!-- Row 0 -->
+        <div class="slot" data-r="0" data-c="0" style="grid-area: c00"></div>
+        <div class="slot" data-r="0" data-c="1" style="grid-area: c01"></div>
+        <div class="slot" data-r="0" data-c="2" style="grid-area: c02"></div>
+        <div class="slot" data-r="0" data-c="3" style="grid-area: c03"></div>
+        <div
+          id="row-score-0"
+          class="score-slot row-score"
+          style="grid-area: r0s"
+        ></div>
+        <div id="discard-0" class="discard-slot" style="grid-area: d0"></div>
+
+        <!-- Row 1 -->
+        <div class="slot" data-r="1" data-c="0" style="grid-area: c10"></div>
+        <div class="slot" data-r="1" data-c="1" style="grid-area: c11"></div>
+        <div class="slot" data-r="1" data-c="2" style="grid-area: c12"></div>
+        <div class="slot" data-r="1" data-c="3" style="grid-area: c13"></div>
+        <div
+          id="row-score-1"
+          class="score-slot row-score"
+          style="grid-area: r1s"
+        ></div>
+        <div id="discard-1" class="discard-slot" style="grid-area: d1"></div>
+
+        <!-- Row 2 -->
+        <div class="slot" data-r="2" data-c="0" style="grid-area: c20"></div>
+        <div class="slot" data-r="2" data-c="1" style="grid-area: c21"></div>
+        <div class="slot" data-r="2" data-c="2" style="grid-area: c22"></div>
+        <div class="slot" data-r="2" data-c="3" style="grid-area: c23"></div>
+        <div
+          id="row-score-2"
+          class="score-slot row-score"
+          style="grid-area: r2s"
+        ></div>
+        <div id="discard-2" class="discard-slot" style="grid-area: d2"></div>
+
+        <!-- Row 3 -->
+        <div class="slot" data-r="3" data-c="0" style="grid-area: c30"></div>
+        <div class="slot" data-r="3" data-c="1" style="grid-area: c31"></div>
+        <div class="slot" data-r="3" data-c="2" style="grid-area: c32"></div>
+        <div class="slot" data-r="3" data-c="3" style="grid-area: c33"></div>
+        <div
+          id="row-score-3"
+          class="score-slot row-score"
+          style="grid-area: r3s"
+        ></div>
+        <div id="discard-3" class="discard-slot" style="grid-area: d3"></div>
+
+        <!-- Footer -->
+        <div
+          id="col-score-0"
+          class="score-slot col-score"
+          style="grid-area: c0s"
+        ></div>
+        <div
+          id="col-score-1"
+          class="score-slot col-score"
+          style="grid-area: c1s"
+        ></div>
+        <div
+          id="col-score-2"
+          class="score-slot col-score"
+          style="grid-area: c2s"
+        ></div>
+        <div
+          id="col-score-3"
+          class="score-slot col-score"
+          style="grid-area: c3s"
+        ></div>
+        <div id="corners-label-container" style="grid-area: corn"></div>
+        <div
+          id="discard-score"
+          class="discard-score-container"
+          style="grid-area: dres"
+        ></div>
+      </div>
+
+      <div id="active-hand-container">
+        <div id="active-hand" class="hand-row">
+          <!-- 5 slots for the current hand -->
+          <div class="hand-slot" id="hand-0"></div>
+          <div class="hand-slot" id="hand-1"></div>
+          <div class="hand-slot" id="hand-2"></div>
+          <div class="hand-slot" id="hand-3"></div>
+          <div class="hand-slot" id="hand-4"></div>
+        </div>
+      </div>
+
       <div id="controls">
-        <button id="nextRoundButton">Start Game</button>
-        <button id="playAgainButton" style="display: none">Play Again</button>
-      </div>
-      <div id="scoreBoard">Total Score: 0</div>
-      <div class="message-area" id="gameMessagesArea"></div>
-      <div id="highScores">
-        <h3>High Scores</h3>
-        <ul id="highScoresList"></ul>
-      </div>
-    </div>
-
-    <div id="customAlertModal" class="modal">
-      <div class="modal-content">
-        <p id="customAlertMessage"></p>
-        <button id="customAlertCloseButton" class="modal-close-button">
-          OK
+        <button id="btn-next" class="primary-btn">Deal Cards</button>
+        <button
+          id="btn-restart"
+          class="primary-btn"
+          style="display: none; background: var(--accent)"
+        >
+          Play Again
         </button>
       </div>
+    </main>
+
+    <div id="message-area" class="message-area"></div>
+
+    <div id="score-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <h2>Game Over</h2>
+        <div class="modal-body">
+          <div class="score-row">
+            <span>Raw Score:</span> <span id="modal-raw-score">0</span>
+          </div>
+          <div class="score-row">
+            <span>4 Corners:</span>
+            <span id="modal-corners-status" class="status-badge">None</span>
+          </div>
+          <div class="score-row">
+            <span>Discard Bonus:</span>
+            <span id="modal-discard-status" class="status-badge">None</span>
+          </div>
+          <div class="score-row">
+            <span>Final Multiplier:</span>
+            <span id="modal-multiplier" class="accent-text">x1</span>
+          </div>
+          <hr />
+          <div class="score-row total">
+            <span>Total Score:</span> <span id="modal-total-score">0</span>
+          </div>
+          <div class="high-scores-section">
+            <h3>Top Scores</h3>
+            <div id="high-scores-list"></div>
+          </div>
+        </div>
+        <button id="modal-close-btn" class="primary-btn">Play Again</button>
+      </div>
     </div>
 
-    <div id="helpModal" class="modal">
-      <div class="modal-content">
+    <div id="help-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content help-modal-content">
         <h3>How to Play</h3>
-        <div id="helpContent"></div>
-        <button id="helpModalCloseButton" class="modal-close-button">
-          Close
-        </button>
+        <div id="helpContent" class="help-scroll-area">
+          <h4>
+            A barebones version of
+            <a href="https://www.puzzmo.com/game/pile-up-poker/"
+              >Pile up Poker</a
+            >
+            by Zach Gage, playable for real in
+            <a href="https://www.puzzmo.com/">Puzzmo</a>
+          </h4>
+          <hr />
+          <p>
+            <strong>Goal:</strong> Score the most points by forming poker hands
+            on the 4x4 grid.
+          </p>
+          <p><strong>Rounds:</strong> 4 rounds. In each round:</p>
+          <ul>
+            <li>You are dealt 5 cards.</li>
+            <li>Place 4 cards onto the grid.</li>
+            <li>The 1 remaining card is discarded.</li>
+          </ul>
+          <p><strong>Scoring:</strong></p>
+          <ul>
+            <li>
+              Hands are scored for each of the 4 rows, each of the 4 columns,
+              and the 4 corners.
+            </li>
+            <li>
+              Pairs (2 cards) and Three-of-a-Kind (3 cards) score as you place
+              them.
+            </li>
+            <li>
+              Straights, Flushes, Four-of-a-Kind, and Straight Flushes require 4
+              cards in a line.
+            </li>
+            <li>
+              Corner hands also score with 2, 3, or 4 cards and get a 2x score
+              multiplier.
+            </li>
+          </ul>
+          <p>
+            <strong>Bonus:</strong> If all 9 scoring areas (4 rows, 4 columns, 1
+            corners) form a valid poker hand at the end of the game, your final
+            4-card discard pile is evaluated. If it also forms a hand, its score
+            is tripled and added to your total!
+          </p>
+          <p>
+            <strong>Discard Pile:</strong> The potential score of your discard
+            pile is shown at the top left as you discard cards.
+          </p>
+        </div>
+        <button id="help-close-btn" class="primary-btn">Close</button>
       </div>
     </div>
+
     <script type="module" src="script.js"></script>
   </body>
 </html>

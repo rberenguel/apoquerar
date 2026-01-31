@@ -1,0 +1,226 @@
+/* Solarized Dark Palette */
+:root {
+  --base03: #111; /* Background */
+  --base02: #030303; /* Darker Background tones / Card Background */
+  --base01: #586e75; /* Comments, Grid lines */
+  --base00: #657b83; /* Default Text */
+  --base0: #839496; /* Lighter Text */
+  --base1: #93a1a1; /* Even Lighter Text */
+  --base2: #eee8d5;
+  --base3: #fdf6e3;
+  --yellow: #b58900; /* Highlight border, score text */
+  --orange: #cb4b16; /* Red Suits */
+  --red: #dc322f;
+  --magenta: #d33682;
+  --violet: #444; /* Dragging card highlight */
+  --blue: #338; /* Buttons */
+  --cyan: #2aa198; /* Black Suits, Button Hover */
+  --green: #859900;
+}
+
+body {
+  font-family: "Inter", "Arial", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--base03);
+  margin: 0;
+  padding-top: 10px;
+  color: var(--base0);
+  position: relative;
+  overscroll-behavior-y: contain; /* Prevent pull-to-refresh on body */
+}
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--base02);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  max-width: 95vw;
+  width: 100%;
+  position: relative;
+}
+canvas {
+  border: 1px solid var(--base01);
+  background-color: var(--base03);
+  cursor: default;
+  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+  touch-action: none; /* Important for preventing default touch actions like pan/zoom on canvas */
+}
+#controls {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+}
+button {
+  padding: 10px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+  background-color: var(--blue);
+  color: var(--base3);
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+button:hover {
+  background-color: var(--cyan);
+}
+button:disabled {
+  background-color: var(--base01);
+  color: var(--base00);
+  cursor: not-allowed;
+}
+#scoreBoard {
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--base1);
+}
+#highScores {
+  display: none;
+  text-align: left;
+  width: clamp(300px, 90%, 500px);
+  padding: 15px;
+  background-color: var(--base02);
+  border: 1px solid var(--base01);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+#highScores h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--blue);
+}
+#highScores ul {
+  list-style-type: decimal;
+  padding-left: 30px;
+  margin: 0;
+}
+#highScores li {
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: var(--base0);
+}
+.message-area {
+  min-height: 20px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--green);
+  text-align: center;
+  width: 100%;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding-top: 60px;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background-color: var(--base02);
+  color: var(--base1);
+  padding: 25px;
+  border: 1px solid var(--base01);
+  width: 90%;
+  max-width: 480px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  font-size: 15px;
+}
+.modal-content p {
+  margin-bottom: 12px;
+  font-size: inherit;
+  line-height: 1.5;
+}
+.modal-close-button {
+  background-color: var(--blue);
+  color: var(--base3);
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+.modal-close-button:hover {
+  background-color: var(--cyan);
+}
+
+#helpButtonContainer {
+  position: absolute;
+  top: 15px;
+  right: calc(50% - 2rem);
+  z-index: 100;
+}
+
+#helpButton {
+  background-color: var(--blue);
+  color: var(--base3);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+#helpButton:hover {
+  background-color: var(--cyan);
+}
+
+#helpModal .modal-content h3 {
+  color: var(--blue);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+#helpModal a {
+  color: var(--yellow);
+}
+
+#helpContent {
+  text-align: left;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 15px;
+  font-size: 0.95em;
+}
+#helpContent ul {
+  list-style-position: outside;
+  padding-left: 25px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+#helpContent li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+#helpContent p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+#helpContent strong {
+  color: var(--base1);
+}

@@ -1,41 +1,69 @@
-export { haptic };
+/**
+ * Pure JavaScript Haptic Feedback
+ * MIT Licensed
+ *
+ * This module is adapted from the MIT-licensed React hook `use-haptic`.
+ * It provides a simple way to trigger haptic feedback on mobile devices.
+ * Original repository: https://github.com/posaune0423/use-haptic
+ */
 
-// Crude JS conversion of https://github.com/tijnjh/ios-haptics
-// Thanks for that!
+let hapticLabel = null;
 
-let started = false;
+/**
+ * Detects if the current device is running iOS.
+ * @returns {boolean}
+ */
+const detectiOS = () => {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
 
-const haptic = () => {
-  try {
-    if (started) {
-      return;
-    }
-    started = true;
-    const label = document.createElement("label");
-    label.ariaHidden = "true";
-    label.style.display = "none";
+/**
+ * Initializes the haptic feedback elements.
+ * Call this function once when your application loads.
+ */
+function initHaptic() {
+  if (hapticLabel || typeof document === "undefined") return;
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.setAttribute("switch", "");
-    label.appendChild(input);
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.id = "haptic-switch";
+  input.setAttribute("switch", "");
+  input.style.display = "none";
+  document.body.appendChild(input);
 
-    document.head.appendChild(label);
-    label.click();
-    document.head.removeChild(label);
-    started = false;
-  } catch {
-    // Fail silently
+  const label = document.createElement("label");
+  label.htmlFor = "haptic-switch";
+  label.style.display = "none";
+  document.body.appendChild(label);
+
+  hapticLabel = label;
+}
+
+/**
+ * Triggers haptic feedback.
+ * @param {number} [duration=100] - Vibration duration in ms for non-iOS devices.
+ */
+function triggerHaptic(duration = 100) {
+  if (!hapticLabel) {
+    console.warn("Haptic feedback not initialized. Call initHaptic() first.");
+    return;
   }
-};
 
-haptic.confirm = () => {
-  haptic();
-  setTimeout(() => haptic(), 120);
-};
+  if (detectiOS()) {
+    hapticLabel.click();
+  } else if (navigator?.vibrate) {
+    window?.navigator?.vibrate(duration) || navigator.vibrate(duration);
+  } else {
+    hapticLabel.click(); // Fallback
+  }
+}
 
-haptic.error = () => {
-  haptic();
-  setTimeout(() => haptic(), 120);
-  setTimeout(() => haptic(), 240);
-};
+// Auto-initialize when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initHaptic);
+} else {
+  initHaptic();
+}
+
+export { triggerHaptic as haptic };

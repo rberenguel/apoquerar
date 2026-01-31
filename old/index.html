@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/png" href="icon.png" />
+    <title>Apoquerar</title>
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="game-container">
+      <div id="helpButtonContainer">
+        <button id="helpButton">?</button>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+      <div id="controls">
+        <button id="nextRoundButton">Start Game</button>
+        <button id="playAgainButton" style="display: none">Play Again</button>
+      </div>
+      <div id="scoreBoard">Total Score: 0</div>
+      <div class="message-area" id="gameMessagesArea"></div>
+      <div id="highScores">
+        <h3>High Scores</h3>
+        <ul id="highScoresList"></ul>
+      </div>
+    </div>
+
+    <div id="customAlertModal" class="modal">
+      <div class="modal-content">
+        <p id="customAlertMessage"></p>
+        <button id="customAlertCloseButton" class="modal-close-button">
+          OK
+        </button>
+      </div>
+    </div>
+
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <h3>How to Play</h3>
+        <div id="helpContent"></div>
+        <button id="helpModalCloseButton" class="modal-close-button">
+          Close
+        </button>
+      </div>
+    </div>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
